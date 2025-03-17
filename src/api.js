@@ -13,12 +13,14 @@ export default {
   async obtenerReclamos() {
     try {
       const response = await api.get("/reclamos");
+      console.log("Respuesta de la API:", response.data); // <--- Nuevo
       return response.data;
     } catch (error) {
       console.error("Error al obtener reclamos:", error);
       return [];
     }
-  },
+  }
+  ,
 
   async actualizarEstadoReclamo(idReclamo, nuevoEstado) {
     try {

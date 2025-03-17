@@ -1,9 +1,10 @@
 <template>
   <div class="app-container">
-    <h1>Reclamos</h1>
 
     <div class="toolbar-container">
       <div class="toolbar">
+        <h1 class="title">Reclamos</h1>
+
         <BuscarReclamos @buscar="filtrarReclamos" />
         <FiltrarReclamos @filtrar="filtrarReclamosPorEstado" />
       </div>
@@ -71,22 +72,29 @@ export default {
     }
 
     this.reclamos = reclamos.map(reclamo => ({
-      ID_RECLAMO: reclamo.ID_RECLAMO, // ✅ agrega esta línea
-      fecha: new Date(reclamo.FECHA_RECLAMO).toLocaleDateString("es-ES", { 
-        day: "2-digit", 
-        month: "2-digit", 
-        year: "numeric"
-      }),
-      estado: reclamo.ESTADO,
-      cliente: { 
-        nombre: `${reclamo.NOMBRE} ${reclamo.APELLIDO}`, 
-        dni: reclamo.DNI 
-      },
-      numeroSuministro: reclamo.NUMERO_SUMINISTRO,
-      medidor: reclamo.NUMERO_MEDIDOR,
-      descripcion: reclamo.DESCRIPCION,
-      direccion: reclamo.DIRECCION
-    }));
+  ID_RECLAMO: reclamo.ID_RECLAMO,
+  fechaOriginal: new Date(reclamo.FECHA_RECLAMO),
+  fecha: new Date(reclamo.FECHA_RECLAMO).toLocaleDateString("es-ES", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric"
+  }),
+  estado: reclamo.ESTADO,
+
+  // 👇 Usa el objeto 'cliente' tal cual, o si quieres formatearlo, accede a sus propiedades
+  cliente: {
+    nombre: reclamo.cliente?.nombre || "",
+    dni: reclamo.cliente?.dni || ""
+  },
+
+  numeroSuministro: reclamo.numeroSuministro,
+  medidor: reclamo.medidor,
+  descripcion: reclamo.DESCRIPCION,
+  direccion: reclamo.direccion
+}));
+
+    // Ordenar los reclamos por fecha descendente (los más nuevos primero)
+    this.reclamos.sort((a, b) => b.fechaOriginal - a.fechaOriginal);
 
     this.organizarReclamos();
   } catch (error) {
@@ -116,31 +124,40 @@ export default {
       }
     },
     organizarReclamos() {
-      const cardsPorGrupo = 12;
-      const grupos = [];
-      const reclamosOrdenados = [...(this.reclamosFiltrados.length ? this.reclamosFiltrados : this.reclamos)].reverse();
+  const cardsPorGrupo = 12;
+  const grupos = [];
+  const reclamosOrdenados = [...(this.reclamosFiltrados.length ? this.reclamosFiltrados : this.reclamos)];
 
-      for (let i = 0; i < reclamosOrdenados.length; i += cardsPorGrupo) {
-        grupos.push({ reclamos: reclamosOrdenados.slice(i, i + cardsPorGrupo) });
-      }
-      this.reclamosAgrupados = grupos.reverse();
-    },
-    aplicarFiltros() {
-      let filtrados = [...this.reclamos];
-      if (this.terminoBusqueda) {
-        const termino = this.terminoBusqueda.toLowerCase();
-        filtrados = filtrados.filter(reclamo =>
-          reclamo.descripcion.toLowerCase().includes(termino) ||
-          reclamo.cliente.nombre.toLowerCase().includes(termino) ||
-          reclamo.numeroSuministro.toLowerCase().includes(termino) ||
-          reclamo.direccion.toLowerCase().includes(termino)
-        );
-      }
-      if (this.estadoFiltro !== "Todos") {
-        filtrados = filtrados.filter(reclamo => reclamo.estado === this.estadoFiltro);
-      }
-      this.reclamosFiltrados = filtrados;
-    },
+  // Ordenar los reclamos filtrados por fecha descendente
+  reclamosOrdenados.sort((a, b) => b.fechaOriginal - a.fechaOriginal);
+
+  for (let i = 0; i < reclamosOrdenados.length; i += cardsPorGrupo) {
+    grupos.push({ reclamos: reclamosOrdenados.slice(i, i + cardsPorGrupo) });
+  }
+
+  // No invertimos los grupos, ya que queremos que el grupo con los reclamos más recientes esté primero
+  this.reclamosAgrupados = grupos;
+},
+aplicarFiltros() {
+  let filtrados = [...this.reclamos];
+  if (this.terminoBusqueda) {
+    const termino = this.terminoBusqueda.toLowerCase();
+    filtrados = filtrados.filter(reclamo =>
+      reclamo.descripcion.toLowerCase().includes(termino) ||
+      reclamo.cliente.nombre.toLowerCase().includes(termino) ||
+      reclamo.numeroSuministro.toLowerCase().includes(termino) ||
+      reclamo.direccion.toLowerCase().includes(termino)
+    );
+  }
+  if (this.estadoFiltro !== "Todos") {
+    filtrados = filtrados.filter(reclamo => reclamo.estado === this.estadoFiltro);
+  }
+
+  // Ordenar los reclamos filtrados por fecha descendente
+  filtrados.sort((a, b) => b.fechaOriginal - a.fechaOriginal);
+
+  this.reclamosFiltrados = filtrados;
+},
     filtrarReclamos(termino) {
       this.terminoBusqueda = termino;
       this.aplicarFiltros();
@@ -165,7 +182,10 @@ export default {
   padding: 20px;
   overflow: hidden;
 }
-
+.title{
+    color: #0b60ff81;
+margin-right: 10px; 
+ }
 /* 📌 Barra de herramientas fija */
 .toolbar-container {
   position: sticky;
@@ -220,12 +240,13 @@ export default {
 
 /* 📌 Cada grupo de reclamos tiene un tamaño fijo */
 .grupo-reclamos {
-  min-width: auto; /* Ajusta este valor según el tamaño que prefieras */
+  width: 1600px; /* Ancho fijo para 4 columnas (ajustado para 4 columnas de ~250px + gaps + padding) */
+  min-width: 1100px; /* Aseguramos que no se reduzca */
   padding: 15px;
   border: 1px solid #ccc;
   border-radius: 8px;
   background: #f9f9f9;
-  flex-shrink: 0; /* Evita que los grupos se reduzcan demasiado */
+  flex-shrink: 0; /* Evita que los grupos se reduzcan */
   transition: transform 0.2s ease-in-out;
 }
 
@@ -235,127 +256,69 @@ export default {
   grid-template-columns: repeat(4, minmax(250px, 1fr)); /* 4 columnas */
   grid-template-rows: repeat(3, auto); /* 3 filas */
   gap: 16px;
-  /* Para evitar que el grid crezca más allá de 3 filas, puedes usar un contenedor con altura limitada o manejar el límite en JS */
+  width: 100%; /* Ocupa todo el ancho del contenedor padre */
 }
+
+/* 🔹 Ajustes para pantallas más pequeñas */
 @media (max-width: 1366px) {
-  /* 📌 Contenedor principal ajustado */
-  .app-container {
-    width: 100vw;
-    max-width: 100vw;
-    padding: 12px;
-    margin: 0 auto;
-    overflow-x: hidden;
-  }
-
-  /* 📌 Ajuste del título principal */
-  h1 {
-    font-size: 1.4rem;
-    text-align: center;
-    margin-bottom: 10px;
-  }
-
-  /* 📌 Barra de herramientas más compacta */
-  .toolbar-container {
-    padding: 6px 0;
-  }
-
-  .toolbar {
-    flex-wrap: wrap;
-    gap: 10px;
-    padding: 6px;
-    font-size: 0.85rem;
-    justify-content: center;
-  }
-
-  /* 📌 Ajuste del scroll horizontal y contenedor general */
-  .scroll-container {
-    padding-bottom: 6px;
-  }
-
-  .reclamos-container {
-    gap: 0 !important; /* 🔥 Elimina totalmente el espacio horizontal entre grupos */
-  }
-
-  /* 📌 Ajuste definitivo del grupo de reclamos */
   .grupo-reclamos {
-    width: 1250px !important; /* Ancho ideal para 4 columnas cómodas en 1366px */
-    min-width: 1000px !important;
-    padding: 8px;
-    border-radius: 6px;
-    flex-shrink: 0;
-  }
-
-  /* 📌 Grid ajustado con 4 columnas y 3 filas */
-  .reclamos-grid {
-    grid-template-columns: repeat(4, minmax(50px, 1fr)); /* Asegura 4 columnas */
-    grid-template-rows: repeat(3, auto);
-    gap: 6px; /* Espacio más reducido entre tarjetas */
-  }
-}
-
-
-/* Ocultar barra de desplazamiento en dispositivos móviles si es necesario */
-@media (max-width: 768px) {
-  .scroll-container::-webkit-scrollbar {
-    display: none; /* Oculta la barra de desplazamiento en móviles, pero el scroll sigue funcionando */
-  }
-
-  .grupo-reclamos {
-    min-width: 600px; /* Ajusta el tamaño para pantallas más pequeñas */
-  }
-
-  .reclamos-grid {
-    grid-template-columns: repeat(2, minmax(150px, 1fr)); /* Menos columnas en pantallas pequeñas */
-    grid-template-rows: repeat(3, auto); /* Mantiene las 3 filas */
-  }
-}
-/* 🔹 Monitores más pequeños (19" a 24") */
-@media (max-width: 1440px) {
-  .grupo-reclamos {
-    min-width: 750px; /* Reduce el tamaño del grupo */
-  }
-
-  .reclamos-grid {
-    grid-template-columns: repeat(3, minmax(200px, 1fr)); /* 3 columnas */
-    gap: 14px;
-  }
-}
-
-
-
-/* 🔹 Tablets en horizontal (1024px y menos) */
-@media (max-width: 1024px) {
-  .grupo-reclamos {
-    min-width: 600px;
+    width: 1200px; /* Reducimos ligeramente el ancho para pantallas más pequeñas */
+    min-width: 1000px;
     padding: 10px;
   }
 
   .reclamos-grid {
-    grid-template-columns: repeat(2, minmax(180px, 1fr)); /* 2 columnas */
-    gap: 10px;
+    grid-template-columns: repeat(4, minmax(220px, 1fr)); /* Columnas más estrechas */
+    gap: 12px;
+  }
+  .title{
+    color: #0b60ff81;
+margin-right: 10px;  }
+  /* Ajustes para el toolbar-container */
+  .toolbar-container {
+    padding: 6px 0; /* Reducimos el padding vertical */
   }
 
+  /* Ajustes para el toolbar */
   .toolbar {
-    flex-wrap: wrap; /* Permite que los filtros pasen a la siguiente línea si es necesario */
-    justify-content: center;
+    gap: 2px; /* Reducimos el espacio entre elementos */
+    padding: 6px; /* Reducimos el padding interno */
+    
   }
+
+  /* Ajustes para los elementos dentro del toolbar (como el input de búsqueda y el filtro) */
+  .toolbar > * {
+    transform: scale(0.9); /* Reducimos ligeramente el tamaño de los elementos */
+    
+  }
+  .scroll-container::-webkit-scrollbar {
+  height: 10px; /* Altura de la barra de desplazamiento */
+}
 }
 
-/* 🔹 Tablets en vertical y móviles grandes (768px y menos) */
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   .grupo-reclamos {
-    min-width: 500px; /* Más compacto */
+    width: 800px;
+    min-width: 800px;
+    padding: 8px;
   }
 
   .reclamos-grid {
-    grid-template-columns: repeat(2, minmax(150px, 1fr)); /* Mantiene 2 columnas */
-    gap: 8px;
+    grid-template-columns: repeat(4, minmax(180px, 1fr));
+    gap: 10px;
+  }
+}
+
+@media (max-width: 768px) {
+  .grupo-reclamos {
+    width: 600px;
+    min-width: 600px;
+    padding: 6px;
   }
 
-  .toolbar {
-    flex-wrap: wrap;
-    gap: 10px;
-    padding: 8px;
+  .reclamos-grid {
+    grid-template-columns: repeat(2, minmax(150px, 1fr)); /* Reducimos a 2 columnas */
+    gap: 8px;
   }
 
   .scroll-container::-webkit-scrollbar {
@@ -363,26 +326,16 @@ export default {
   }
 }
 
-/* 🔹 Móviles pequeños (480px y menos) */
 @media (max-width: 480px) {
   .grupo-reclamos {
+    width: 100%;
     min-width: 100%;
-    padding: 8px;
+    padding: 4px;
   }
 
   .reclamos-grid {
     grid-template-columns: repeat(1, 1fr); /* Solo 1 columna */
     gap: 6px;
   }
-
-  .toolbar {
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .scroll-container {
-    overflow-x: auto; /* Sigue permitiendo el scroll horizontal */
-  }
 }
-
 </style>

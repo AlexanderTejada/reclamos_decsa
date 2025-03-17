@@ -39,7 +39,6 @@ export default {
 /* Placeholder estilizado */
 .buscador::placeholder {
   color: #999;
-  font-style: italic;
 }
 
 /* Hover */

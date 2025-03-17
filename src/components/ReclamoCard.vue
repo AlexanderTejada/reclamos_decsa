@@ -21,8 +21,7 @@
       <div class="info-item"><strong>Medidor</strong> <span class="dato">{{ medidor }}</span></div>
     </div>
 
-    <p class="descripcion"><strong>Descripción:</strong> {{ descripcion }}</p>
-    <p class="direccion">📍 {{ direccion }}</p>
+    <p class="descripcion" :title="descripcion"><strong>Descripción:</strong> {{ descripcion }}..</p>    <p class="direccion">📍 {{ direccion }}</p>
   </div>
 </template>
 
@@ -69,7 +68,7 @@ export default {
   transform: translateY(-0.25rem);
   box-shadow: 0px 3px 8px rgba(0, 0, 0, 0.15);
   cursor: pointer;
-  border: 1px solid rgba(0, 0, 255, 0.3);
+  border: px solid rgba(0, 0, 255, 0.3);
 }
 
 .header {
@@ -151,6 +150,19 @@ h2 {
   font-size: 0.85rem;
   color: #555;
   margin: 0.25rem 0;
+}
+.descripcion {
+  font-size: 0.85rem;
+  color: #555;
+  margin: 0.25rem 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2; /* Limita a 2 líneas */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2em; /* Altura de línea consistente */
+  max-height: calc(1.2em * 2); /* Altura máxima para 2 líneas */
+  white-space: normal; /* Permite que el texto se divida en varias líneas */
 }
 
 /* 📌 Ajustes para 1366x768 */
